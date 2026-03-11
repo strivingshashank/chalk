@@ -1,0 +1,9 @@
+bin/
+obj/
+
+*.o
+*.out
+*.a
+
+.vscode/
+
