@@ -2,20 +2,15 @@
 #include "../include/lexer.h"
 #include "../include/parser.h"
 
+#include <errno.h>
 #include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 
-const char *get_expression(void) {
-	return "3^2^2";
-	// return "1.1+2.2";
-	// return "4*2/1-5";
-	// return "-(3+4*2)/(1-5)";
-	// return "((15+7)*(8-3)-(42/6+11)*(3+4))";
-	// return "(100/(4+1))*(7-2)+(36/((2+1)*4)-1)";
-	// return "((84/(2+5))*(9-4)-((13+7)/(2+3)))*(4-1)";
-}
+char *get_expression_from_file(const char *file_name);
 
 int main() {
-	const char *expression = get_expression();
+	const char *expression = get_expression_from_file("example/mix.chalk");
 	lexer_t *lexer = lexer_new(expression);
 	ast_node_t *tree = parse_expression(lexer);
 	
@@ -29,5 +24,28 @@ int main() {
 	ast_dump(tree, 0);
 	
 	return 0;
+}
+
+char *get_expression_from_file(const char *file_name) {
+	if (!file_name) {
+		die("get_expression_from_file(): null file name");
+	}
+
+	FILE *file = fopen(file_name, "r");
+
+	if (!file) {
+		die("get_expression_from_file(): cannot open file");
+	}
+	
+	fseek(file, 0, SEEK_END); /* set file cursor at EOF */
+	long file_size = ftell(file);
+	rewind(file);
+
+	/* one extra byte accounts for the NULL terminator */
+	char *buff = mem_alloc(sizeof(char) * file_size + 1);
+	fread(buff, sizeof(char), file_size, file);
+	buff[file_size] = '\0';
+
+	return buff;
 }
 
