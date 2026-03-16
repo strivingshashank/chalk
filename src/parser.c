@@ -2,6 +2,7 @@
 #include "../include/parser.h"
 
 #include <stdio.h>
+#include <math.h>
 
 struct ast_node {
 	ast_node_type_t type;
@@ -12,6 +13,7 @@ struct ast_node {
 
 /* ----- FORWARD DECLARATIONS ----- */
 ast_node_t *parse_term(lexer_t *lexer);
+ast_node_t *parse_power(lexer_t *lexer);
 ast_node_t *parse_unary(lexer_t *lexer);
 ast_node_t *parse_primary(lexer_t *lexer);
 
@@ -54,7 +56,7 @@ ast_node_t *parse_expression(lexer_t *lexer) {
 }
 
 ast_node_t *parse_term(lexer_t *lexer) {
-	ast_node_t *left = parse_unary(lexer);
+	ast_node_t *left = parse_power(lexer);
 	
 	for (;;) {
 		token_t token = lexer_peek(lexer);
@@ -69,10 +71,24 @@ ast_node_t *parse_term(lexer_t *lexer) {
 		}
 		
 		lexer_next(lexer);
-		ast_node_t *right = parse_unary(lexer);
+		ast_node_t *right = parse_power(lexer);
 		left = ast_node_new(node_type, 0, left, right);
 	}
 	
+	return left;
+}
+
+ast_node_t *parse_power(lexer_t *lexer) {
+	ast_node_t *left = parse_unary(lexer);
+
+	token_t token = lexer_peek(lexer);
+
+	if (token.type == TOK_POW) {
+		lexer_next(lexer);
+		ast_node_t *right = parse_power(lexer);
+		return ast_node_new(AST_POW, 0, left, right);
+	}
+
 	return left;
 }
 
@@ -120,6 +136,7 @@ static const char *ast_node_type_str(ast_node_type_t type) {
 		case AST_SUB: return "SUB";
 		case AST_MUL: return "MUL";
 		case AST_DIV: return "DIV";
+		case AST_POW: return "POW";
 		default:      return "UNKNOWN";
 	}
 }
@@ -136,6 +153,8 @@ double ast_eval(ast_node_t *node) {
 		case AST_SUB: return ast_eval(node->left) - ast_eval(node->right);
 		case AST_MUL: return ast_eval(node->left) * ast_eval(node->right);
 		case AST_DIV: return ast_eval(node->left) / ast_eval(node->right);
+		case AST_POW: return pow(ast_eval(node->left), ast_eval(node->right));
+		default:	die("ast_eval(): unexpected AST node");
 	}
 
 	return 0;

@@ -9,7 +9,8 @@ typedef enum {
 	AST_ADD,
 	AST_SUB,
 	AST_MUL,
-	AST_DIV
+	AST_DIV,
+	AST_POW
 } ast_node_type_t;
 
 typedef struct ast_node ast_node_t;

@@ -60,6 +60,7 @@ static token_t token_next(lexer_t *lexer) {
 		case '-': return (token_t){ .type = TOK_SUB, .value = 0 };
 		case '*': return (token_t){ .type = TOK_MUL, .value = 0 };
 		case '/': return (token_t){ .type = TOK_DIV, .value = 0 };
+		case '^': return (token_t){ .type = TOK_POW, .value = 0 };
 		case '(': return (token_t){ .type = TOK_LPAREN, .value = 0 };
 		case ')': return (token_t){ .type = TOK_RPAREN, .value = 0 };
 		default:  return (token_t){ .type = TOK_UNKNOWN, .value = 0 };
@@ -159,6 +160,11 @@ void lexer_dump(lexer_t *lexer) {
 				break;
 			}
 			
+			case TOK_POW: {
+				printf("TOK_POW (^)");
+				break;
+			}
+			
 			case TOK_LPAREN: {
 				printf("TOK_LPAREN (()");
 				break;
@@ -169,7 +175,6 @@ void lexer_dump(lexer_t *lexer) {
 				break;
 			}
 			
-			// fflush(stdout);
 		}
 		
 		token = lexer_next(lexer);

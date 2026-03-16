@@ -7,10 +7,11 @@ typedef enum {
 	TOK_SUB,    
 	TOK_MUL,    
 	TOK_DIV,    
+	TOK_POW,
 	TOK_LPAREN,    
 	TOK_RPAREN,    
 	TOK_EOF,    
-	TOK_UNKNOWN    
+	TOK_UNKNOWN
 } token_type_t; 
 
 typedef struct {
