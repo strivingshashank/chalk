@@ -3,20 +3,26 @@
 
 #include <stdlib.h>
 #include <stdbool.h>
+#include <string.h>
 #include <ctype.h>
 #include <stdio.h>
+#include <assert.h>
 
-struct lexer {
+/* ----- DECLARATIONS ----- */
+
+struct _lexer {
 	const char *src;
 	size_t      pos;
 	token_t     peeked;
 	bool        has_peeked;
 };
 
-static token_t token_next(lexer_t *lexer) {
-	if (!lexer) {
-		die("token_next(): null lexer");
-	}
+static token_t _token_next(lexer_t *lexer);
+
+/* ----- DEFINITIONS ----- */
+
+token_t _token_next(lexer_t *lexer) {
+	assert(lexer);
 	
 	/* skip whitespace */
 	while (isspace(lexer->src[lexer->pos])) {
@@ -52,10 +58,20 @@ static token_t token_next(lexer_t *lexer) {
 		
 		return (token_t){ .type = TOK_NUM, .value = value };
 	}
+
+	if (strncmp(&lexer->src[lexer->pos], "print", 5) == 0) {
+		if (isalnum(lexer->src[lexer->pos + 5])) {
+			return (token_t){ .type = TOK_UNKNOWN, .value = 0 };
+		}
+
+		lexer->pos += 5;
+		return (token_t){ .type = TOK_PRINT, .value = 0 };
+	}
 	
 	lexer->pos++;
 	
 	switch (lexer->src[lexer->pos - 1]) {
+		case '\0': return (token_t){ .type = TOK_EOF, .value = 0 };
 		case '+': return (token_t){ .type = TOK_ADD, .value = 0 };
 		case '-': return (token_t){ .type = TOK_SUB, .value = 0 };
 		case '*': return (token_t){ .type = TOK_MUL, .value = 0 };
@@ -63,6 +79,8 @@ static token_t token_next(lexer_t *lexer) {
 		case '^': return (token_t){ .type = TOK_POW, .value = 0 };
 		case '(': return (token_t){ .type = TOK_LPAREN, .value = 0 };
 		case ')': return (token_t){ .type = TOK_RPAREN, .value = 0 };
+		case ':': return (token_t){ .type = TOK_COLON, .value = 0 };
+		case ';': return (token_t){ .type = TOK_SCOLON, .value = 0 };
 		default:  return (token_t){ .type = TOK_UNKNOWN, .value = 0 };
 	}
 }
@@ -100,7 +118,7 @@ token_t lexer_next(lexer_t *lexer) {
 		return lexer->peeked;
 	}
 	
-	return token_next(lexer);
+	return _token_next(lexer);
 }
 
 token_t lexer_peek(lexer_t *lexer) {
@@ -109,21 +127,25 @@ token_t lexer_peek(lexer_t *lexer) {
 	}
 	
 	if (!lexer->has_peeked) {
-		lexer->peeked = token_next(lexer);
+		lexer->peeked = _token_next(lexer);
 		lexer->has_peeked = true;
 	}
 	
 	return lexer->peeked;
 }
 
-void lexer_dump(lexer_t *lexer) {
+void lexer_dump(lexer_t *lexer, FILE *stream) {
 	if (!lexer) {
 		die("lexer_dump(): null lexer");
+	}
+
+	if (!stream) {
+		die("lexer_dump(): null stream");
 	}
 	
 	token_t token = lexer_next(lexer);
 	
-	printf("[ ");
+	fprintf(stream, "[ ");
 	
 	while (token.type != TOK_EOF) {
 		switch (token.type) {
@@ -136,51 +158,69 @@ void lexer_dump(lexer_t *lexer) {
 			}
 			
 			case TOK_NUM: {
-				printf("TOK_NUM (%g)", token.value);
+				fprintf(stream, "TOK_NUM (%g)", token.value);
 				break;
 			}
 			
 			case TOK_ADD: {
-				printf("TOK_ADD (+)");
+				fprintf(stream, "TOK_ADD (+)");
 				break;
 			}
 			
 			case TOK_SUB: {
-				printf("TOK_SUB (-)");
+				fprintf(stream, "TOK_SUB (-)");
 				break;
 			}
 			
 			case TOK_MUL: {
-				printf("TOK_MUL (*)");
+				fprintf(stream, "TOK_MUL (*)");
 				break;
 			}
 			
 			case TOK_DIV: {
-				printf("TOK_DIV (/)");
+				fprintf(stream, "TOK_DIV (/)");
 				break;
 			}
 			
 			case TOK_POW: {
-				printf("TOK_POW (^)");
+				fprintf(stream, "TOK_POW (^)");
 				break;
 			}
 			
 			case TOK_LPAREN: {
-				printf("TOK_LPAREN (()");
+				fprintf(stream, "TOK_LPAREN (()");
 				break;
 			}
 			
 			case TOK_RPAREN: {
-				printf("TOK_RPAREN ())");
+				fprintf(stream, "TOK_RPAREN ())");
 				break;
 			}
 			
+			case TOK_PRINT: {
+				fprintf(stream, "TOK_PRINT (print)");
+				break;
+			}
+
+			case TOK_COLON: {
+				fprintf(stream, "TOK_COLON (:)");
+				break;
+			}
+
+			case TOK_SCOLON: {
+				fprintf(stream, "TOK_SCOLON (;)");
+				break;
+			}
+
+			default: {
+				die("lexer_dump(): unknown token");
+			}
 		}
 		
 		token = lexer_next(lexer);
-		printf(", ");
+		fprintf(stream, ", ");
 	}
 	
-	printf("TOK_EOF ]\n");
+	fprintf(stream, "TOK_EOF ]\n");
 }
 
