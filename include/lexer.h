@@ -3,6 +3,8 @@
 
 #include <stdio.h>
 
+#define MAX_IDENT_LEN 32
+
 typedef enum {
 	TOK_NUM,    
 	TOK_ADD,    
@@ -15,13 +17,19 @@ typedef enum {
 	TOK_PRINT,
 	TOK_COLON,
 	TOK_SCOLON,
+	TOK_LET,
+	TOK_IDENT,
 	TOK_EOF,    
 	TOK_UNKNOWN
 } token_type_t; 
 
 typedef struct {
 	token_type_t type;
-	double       value;
+	
+	union {
+		double num;
+		char str[MAX_IDENT_LEN + 1];
+	} value;
 } token_t;
 
 typedef		struct _lexer lexer_t;

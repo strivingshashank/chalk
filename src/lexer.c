@@ -8,6 +8,12 @@
 #include <stdio.h>
 #include <assert.h>
 
+#define KW_PRINT "print"
+#define KW_PRINT_LEN (sizeof("print") - 1)
+
+#define KW_LET "let"
+#define KW_LET_LEN (sizeof("let") - 1)
+
 /* ----- DECLARATIONS ----- */
 
 struct _lexer {
@@ -18,6 +24,10 @@ struct _lexer {
 };
 
 static token_t _token_next(lexer_t *lexer);
+static token_t _token_form_number(lexer_t *lexer);
+static token_t _token_form_separator(lexer_t *lexer);
+static token_t _token_form_keyword(lexer_t *lexer);
+static token_t _token_form_ident(lexer_t *lexer);
 
 /* ----- DEFINITIONS ----- */
 
@@ -31,58 +41,120 @@ token_t _token_next(lexer_t *lexer) {
 	
 	/* handle NULL */
 	if (lexer->src[lexer->pos] == '\0') {
-		return (token_t){ .type = TOK_EOF, .value = 0 };
+		return (token_t){ .type = TOK_EOF, .value.num = 0 };
 	}
 	
 	/* form number */
 	if (isdigit(lexer->src[lexer->pos])) {
-		/* interger part */
-		double value = 0;
+		return _token_form_number(lexer);
+	}
+
+	/* form keywords/identifiers */
+	if (isalpha(lexer->src[lexer->pos])) {
+		token_t token = _token_form_keyword(lexer);
+
+		if (token.type != TOK_UNKNOWN) {
+			return token;
+		}
+
+		return _token_form_ident(lexer);
+	}
+	
+	return _token_form_separator(lexer);
+}
+
+token_t _token_form_number(lexer_t *lexer) {
+	assert(lexer);
+
+	/* interger part */
+	double value = 0;
+	
+	while (isdigit(lexer->src[lexer->pos])) {
+		value = value * 10 + (lexer->src[lexer->pos] - '0');
+		lexer->pos++;
+	}
+	
+	/* fraction part */
+	if (lexer->src[lexer->pos] == '.') {
+		lexer->pos++;
+		double factor = 0.1;
 		
 		while (isdigit(lexer->src[lexer->pos])) {
-			value = value * 10 + (lexer->src[lexer->pos] - '0');
+			value += (lexer->src[lexer->pos] - '0') * factor;
+			factor *= 0.1;
 			lexer->pos++;
 		}
-		
-		/* fraction part */
-		if (lexer->src[lexer->pos] == '.') {
-			lexer->pos++;
-			double factor = 0.1;
-			
-			while (isdigit(lexer->src[lexer->pos])) {
-				value += (lexer->src[lexer->pos] - '0') * factor;
-				factor *= 0.1;
-				lexer->pos++;
-			}
-		}
-		
-		return (token_t){ .type = TOK_NUM, .value = value };
-	}
-
-	if (strncmp(&lexer->src[lexer->pos], "print", 5) == 0) {
-		if (isalnum(lexer->src[lexer->pos + 5])) {
-			return (token_t){ .type = TOK_UNKNOWN, .value = 0 };
-		}
-
-		lexer->pos += 5;
-		return (token_t){ .type = TOK_PRINT, .value = 0 };
 	}
 	
+	return (token_t){ .type = TOK_NUM, .value.num = value };
+}
+
+token_t _token_form_separator(lexer_t *lexer) {
+	assert(lexer);
+
+	/* increment the cursor here beacause, we do not get the chance later */
 	lexer->pos++;
-	
+
 	switch (lexer->src[lexer->pos - 1]) {
-		case '\0': return (token_t){ .type = TOK_EOF, .value = 0 };
-		case '+': return (token_t){ .type = TOK_ADD, .value = 0 };
-		case '-': return (token_t){ .type = TOK_SUB, .value = 0 };
-		case '*': return (token_t){ .type = TOK_MUL, .value = 0 };
-		case '/': return (token_t){ .type = TOK_DIV, .value = 0 };
-		case '^': return (token_t){ .type = TOK_POW, .value = 0 };
-		case '(': return (token_t){ .type = TOK_LPAREN, .value = 0 };
-		case ')': return (token_t){ .type = TOK_RPAREN, .value = 0 };
-		case ':': return (token_t){ .type = TOK_COLON, .value = 0 };
-		case ';': return (token_t){ .type = TOK_SCOLON, .value = 0 };
-		default:  return (token_t){ .type = TOK_UNKNOWN, .value = 0 };
+		case '\0': return (token_t){ .type = TOK_EOF, .value.num = 0 };
+		case '+': return (token_t){ .type = TOK_ADD, .value.num = 0 };
+		case '-': return (token_t){ .type = TOK_SUB, .value.num = 0 };
+		case '*': return (token_t){ .type = TOK_MUL, .value.num = 0 };
+		case '/': return (token_t){ .type = TOK_DIV, .value.num = 0 };
+		case '^': return (token_t){ .type = TOK_POW, .value.num = 0 };
+		case '(': return (token_t){ .type = TOK_LPAREN, .value.num = 0 };
+		case ')': return (token_t){ .type = TOK_RPAREN, .value.num = 0 };
+		case ':': return (token_t){ .type = TOK_COLON, .value.num = 0 };
+		case ';': return (token_t){ .type = TOK_SCOLON, .value.num = 0 };
+		default:  return (token_t){ .type = TOK_UNKNOWN, .value.num = 0 };
 	}
+}
+
+static token_t _token_form_keyword(lexer_t *lexer) {
+	assert(lexer);
+
+	if (strncmp(&lexer->src[lexer->pos], KW_PRINT, KW_PRINT_LEN) == 0) {
+		if (isalnum(lexer->src[lexer->pos + KW_PRINT_LEN])) {
+			return (token_t){ .type = TOK_UNKNOWN, .value.num = 0 };
+		}
+
+		lexer->pos += KW_PRINT_LEN;
+		return (token_t){ .type = TOK_PRINT, .value.num = 0 };
+	}
+
+	if (strncmp(&lexer->src[lexer->pos], KW_LET, KW_LET_LEN) == 0) {
+		if (isalnum(lexer->src[lexer->pos + KW_LET_LEN])) {
+			return (token_t){ .type = TOK_UNKNOWN, .value.num = 0 };
+		}
+
+		lexer->pos += KW_LET_LEN;
+		return (token_t){ .type = TOK_LET, .value.num = 0 };
+	}
+
+	return (token_t){ .type = TOK_UNKNOWN, .value.num = 0 };
+}
+
+token_t _token_form_ident(lexer_t *lexer) {
+	assert(lexer);
+
+	token_t token;
+	long ident_len = 0;
+
+	while (isalpha(lexer->src[lexer->pos + ident_len])) {
+		ident_len++;
+	}
+
+	if (MAX_IDENT_LEN < ident_len) {
+		die("_token_form_ident(): max ident len reached");
+	}
+
+	token.type = TOK_IDENT;
+	strncpy(token.value.str, &lexer->src[lexer->pos], ident_len);
+	token.value.str[ident_len] = '\0';
+	
+	lexer->pos += ident_len;
+	
+	return token;
 }
 
 lexer_t *lexer_new(const char *src) {
@@ -158,7 +230,7 @@ void lexer_dump(lexer_t *lexer, FILE *stream) {
 			}
 			
 			case TOK_NUM: {
-				fprintf(stream, "TOK_NUM (%g)", token.value);
+				fprintf(stream, "TOK_NUM (%g)", token.value.num);
 				break;
 			}
 			
@@ -202,6 +274,11 @@ void lexer_dump(lexer_t *lexer, FILE *stream) {
 				break;
 			}
 
+			case TOK_LET: {
+				fprintf(stream, "TOK_LET (let)");
+				break;
+			}
+
 			case TOK_COLON: {
 				fprintf(stream, "TOK_COLON (:)");
 				break;
@@ -209,6 +286,12 @@ void lexer_dump(lexer_t *lexer, FILE *stream) {
 
 			case TOK_SCOLON: {
 				fprintf(stream, "TOK_SCOLON (;)");
+				break;
+			}
+
+
+			case TOK_IDENT: {
+				fprintf(stream, "TOK_IDENT (%s)", token.value.str);
 				break;
 			}
 

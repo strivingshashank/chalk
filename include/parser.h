@@ -3,7 +3,6 @@
 
 #include "../include/lexer.h"
 
-
 typedef enum {
 	AST_NUM,
 	AST_NEG,
@@ -13,6 +12,8 @@ typedef enum {
 	AST_DIV,
 	AST_POW,
 	AST_PRINT,
+	AST_LET,
+	AST_IDENT,
 	AST_PROGRAM
 } ast_node_type_t;
 
