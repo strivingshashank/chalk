@@ -1,6 +1,6 @@
 CC       = gcc
 CFLAGS   = -Wall -Wextra -Werror -I include -lm
-TARGET   = bin/final
+TARGET   = bin/chalk
 TEST     = bin/test
 SRC      = $(wildcard src/*.c)
 OBJ      = $(patsubst src/%.c, obj/%.o, $(SRC))
