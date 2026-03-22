@@ -3,6 +3,9 @@
 
 #include <stddef.h>
 
+#define FILE_EXTENSION          ".chalk"
+#define FILE_EXTENSION_LEN      (sizeof(FILE_EXTENSION) - 1)
+
 /*
 - BRIEF:        immediately terminate process with a message
 - PARAM:        message to print

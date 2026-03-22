@@ -7,10 +7,17 @@
 #include <stdlib.h>
 #include <string.h>
 
+#define UNUSED(x)	((void)x)
+
 /* ----- DECLARATIONS ----- */
 char *get_source_from_file(const char *file_name);
 
-// TODO: create readme, better error reporting
+// TODO: create readme
+// TODO: better error reporting
+// TODO: symbol table implementation
+// TODO: use asserts in internal functions
+// TODO: study doxygen and implement it
+
 int main() {
 	FILE *out_lexer = fopen("tests/output_lexer.txt", "w");
 	FILE *out_parser = fopen("tests/output_parser.txt", "w");
@@ -28,18 +35,23 @@ int main() {
 		die("main(): null out_program");
 	}
 	
-	char *source_program = get_source_from_file("example/mix.chalk");
+	char *source_program = get_source_from_file("example/ex3.chalk");
 	lexer_t *lexer = lexer_new(source_program);
 	ast_node_t *program_tree = parse_program(lexer);
+
+	// UNUSED(program_tree);
 
 	printf("----- Program -----\n");
 	printf("%s\n", source_program);
 
-	printf("----- Output -----\n");
-	ast_eval(program_tree, stdout);
+	// printf("----- Lexer Dump -----\n");
+	// lexer_dump(lexer, stdout);
 	
-	// printf("----- AST -----\n");
-	// ast_dump(program_tree, stdout);
+	// printf("----- Output -----\n");
+	// ast_eval(program_tree, stdout);
+	
+	printf("----- AST -----\n");
+	ast_dump(program_tree, stdout);
 
 	/* clean-up */
 	fclose(out_lexer);
@@ -53,9 +65,20 @@ int main() {
 
 /* ----- DEFINITIONS ----- */
 
+// TODO: can I improve file checking here?
 char *get_source_from_file(const char *file_name) {
 	if (!file_name) {
 		die("get_source_from_file(): null file name");
+	}
+	
+	char *file_extension = strstr(file_name, FILE_EXTENSION);
+	
+	if (!file_extension) {
+		die("get_source_from_file(): invalid extension, use \".chalk\"");
+	}
+
+	if (strlen(file_extension) != FILE_EXTENSION_LEN) {
+		die("get_source_from_file(): invalid extension, use \".chalk\"");
 	}
 
 	FILE *file = fopen(file_name, "r");
