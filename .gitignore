@@ -9,6 +9,7 @@ obj/
 
 tests/
 doxygen_docs/
+docs/
 example/
 
 Doxyfile
