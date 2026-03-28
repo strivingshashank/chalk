@@ -33,10 +33,12 @@ static ast_node_t *_parse_primary(lexer_t *lexer);
 static void _ast_dump_with_depth(ast_node_t *node, int depth, FILE *stream);
 
 static ast_node_t *_ast_node_new(ast_node_type_t type, double num, const char *str, ast_node_t *left, ast_node_t *right);
+static const char *_ast_node_type_str(ast_node_type_t type);
+static double _ast_eval_value(ast_node_t *node, symbol_table_t *table);
 
 /* ----- DEFINITIONS ----- */
 
-ast_node_t *_ast_node_new(ast_node_type_t type, double num, const char *str, ast_node_t *left, ast_node_t *right) {
+static ast_node_t *_ast_node_new(ast_node_type_t type, double num, const char *str, ast_node_t *left, ast_node_t *right) {
 	ast_node_t *node = mem_alloc(sizeof(ast_node_t));
 	
 	node->type = type;
@@ -50,6 +52,16 @@ ast_node_t *_ast_node_new(ast_node_type_t type, double num, const char *str, ast
 	node->right = right;
 	
 	return node;
+}
+
+size_t symbol_count(ast_node_t *node) {
+	if (!node) {
+		return 0;
+	}
+
+	size_t count = (node->type == AST_LET) ? 1 : 0;
+
+	return count + symbol_count(node->left) + symbol_count(node->right);
 }
 
 ast_node_t *parse_program(lexer_t *lexer) {
@@ -68,7 +80,7 @@ ast_node_t *parse_program(lexer_t *lexer) {
 }
 
 // TODO: add more statements (let var/func, ...)
-ast_node_t *_parse_statement(lexer_t *lexer) {
+static ast_node_t *_parse_statement(lexer_t *lexer) {
 	token_t token = lexer_peek(lexer);
 	ast_node_t *stmt;
 
@@ -91,7 +103,7 @@ ast_node_t *_parse_statement(lexer_t *lexer) {
 	return stmt;
 }
 
-ast_node_t *_parse_print(lexer_t *lexer) {
+static ast_node_t *_parse_print(lexer_t *lexer) {
 	token_t token = lexer_peek(lexer);
 
 	if (token.type != TOK_PRINT) {
@@ -114,7 +126,7 @@ ast_node_t *_parse_print(lexer_t *lexer) {
 	return _ast_node_new(AST_PRINT, 0, NULL, expression, NULL);
 }
 
-ast_node_t *_parse_let(lexer_t *lexer) {
+static ast_node_t *_parse_let(lexer_t *lexer) {
 	token_t token = lexer_peek(lexer);
 
 	if (token.type != TOK_LET) {
@@ -144,7 +156,7 @@ ast_node_t *_parse_let(lexer_t *lexer) {
 	return _ast_node_new(AST_LET, 0, NULL, ident, expression);
 }
 
-ast_node_t *_parse_expression(lexer_t *lexer) {
+static ast_node_t *_parse_expression(lexer_t *lexer) {
 	ast_node_t *lterm = _parse_term(lexer);
 	
 	for (;;) {
@@ -167,7 +179,7 @@ ast_node_t *_parse_expression(lexer_t *lexer) {
 	return lterm;
 }
 
-ast_node_t *_parse_term(lexer_t *lexer) {
+static ast_node_t *_parse_term(lexer_t *lexer) {
 	ast_node_t *lpower = _parse_power(lexer);
 	
 	for (;;) {
@@ -190,7 +202,7 @@ ast_node_t *_parse_term(lexer_t *lexer) {
 	return lpower;
 }
 
-ast_node_t *_parse_power(lexer_t *lexer) {
+static ast_node_t *_parse_power(lexer_t *lexer) {
 	ast_node_t *unary = _parse_unary(lexer);
 
 	token_t token = lexer_peek(lexer);
@@ -204,7 +216,7 @@ ast_node_t *_parse_power(lexer_t *lexer) {
 	return unary;
 }
 
-ast_node_t *_parse_unary(lexer_t *lexer) {
+static ast_node_t *_parse_unary(lexer_t *lexer) {
 	token_t token = lexer_peek(lexer);
 	
 	if (token.type == TOK_SUB) {
@@ -216,7 +228,7 @@ ast_node_t *_parse_unary(lexer_t *lexer) {
 	return _parse_primary(lexer);
 }
 
-ast_node_t *_parse_primary(lexer_t *lexer) {
+static ast_node_t *_parse_primary(lexer_t *lexer) {
 	token_t token = lexer_peek(lexer);
 	
 	if (token.type == TOK_NUM) {
@@ -247,7 +259,7 @@ ast_node_t *_parse_primary(lexer_t *lexer) {
 	return expression;
 }
 
-static const char *ast_node_type_str(ast_node_type_t type) {
+static const char *_ast_node_type_str(ast_node_type_t type) {
 	switch (type) {
 		case AST_NUM:		return "NUM";
 		case AST_NEG:		return "NEG";
@@ -263,43 +275,55 @@ static const char *ast_node_type_str(ast_node_type_t type) {
 	}
 }
 
-double ast_eval_value(ast_node_t *node) {
+static double _ast_eval_value(ast_node_t *node, symbol_table_t *table) {
 	if (!node) {
-		die("ast_eval_value(): null node");
+		die("_ast_eval_value(): null node");
 	}
 
 	switch (node->type) {
 		case AST_NUM: return node->value.num;
-		case AST_NEG: return -ast_eval_value(node->left);
-		case AST_ADD: return ast_eval_value(node->left) + ast_eval_value(node->right);
-		case AST_SUB: return ast_eval_value(node->left) - ast_eval_value(node->right);
-		case AST_MUL: return ast_eval_value(node->left) * ast_eval_value(node->right);
-		case AST_DIV: return ast_eval_value(node->left) / ast_eval_value(node->right);
-		case AST_POW: return pow(ast_eval_value(node->left), ast_eval_value(node->right));
-		default:	die("ast_eval_value(): unexpected AST node");
+		case AST_NEG: return -_ast_eval_value(node->left, table);
+		case AST_ADD: return _ast_eval_value(node->left, table) + _ast_eval_value(node->right, table);
+		case AST_SUB: return _ast_eval_value(node->left, table) - _ast_eval_value(node->right, table);
+		case AST_MUL: return _ast_eval_value(node->left, table) * _ast_eval_value(node->right, table);
+		case AST_DIV: return _ast_eval_value(node->left, table) / _ast_eval_value(node->right, table);
+		case AST_POW: return pow(_ast_eval_value(node->left, table), _ast_eval_value(node->right, table));
+
+		case AST_IDENT: {
+			symbol_t *symbol = symbol_lookup(table, node->value.str);
+
+			if (!symbol) {
+				die("_ast_eval_value(): undefined symbol");
+			}
+			
+			return symbol->value;
+		}
+
+		default:	die("_ast_eval_value(): unexpected AST node");
 	}
 }
 
 // TODO: add functionalities to nodes after semantics is done
-void ast_eval(ast_node_t *node, FILE *stream) {
+void ast_eval(ast_node_t *node, symbol_table_t *table, FILE *stream) {
 	if (!node) {
 		return;
 	}
 
 	switch (node->type) {
 		case AST_PROGRAM: {
-			ast_eval(node->left, stream);
-			ast_eval(node->right, stream);
+			ast_eval(node->left, table, stream);
+			ast_eval(node->right, table, stream);
 			break;
 		}
 
 		case AST_PRINT: {
-			fprintf(stream, "%g\n", ast_eval_value(node->left));
+			fprintf(stream, "%g\n", _ast_eval_value(node->left, table));
 			break;
 		}
 
 		case AST_LET: {
-			// TODO: incomplete here
+			double value = _ast_eval_value(node->right, table);
+			symbol_insert(table, node->left->value.str, value);
 			break;
 		}
 
@@ -327,7 +351,7 @@ void _ast_dump_with_depth(ast_node_t *node, int depth, FILE *stream) {
 	}
 	
 	for (int indent = 0; indent < depth; indent++) {
-		fprintf(stream, " ");
+		fprintf(stream, "  ");
 	}
 	
 	if (node->type == AST_NUM) {
@@ -335,7 +359,7 @@ void _ast_dump_with_depth(ast_node_t *node, int depth, FILE *stream) {
 	} else if (node->type == AST_IDENT) {
 		fprintf(stream, "IDENT(%s)\n", node->value.str);
 	} else {
-		fprintf(stream, "%s\n", ast_node_type_str(node->type));
+		fprintf(stream, "%s\n", _ast_node_type_str(node->type));
 	}
 	
 	_ast_dump_with_depth(node->left, depth + 1, stream);

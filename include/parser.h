@@ -7,6 +7,7 @@
 #ifndef PARSER_H
 #define PARSER_H
 
+#include "../include/symbol_table.h"
 #include "../include/lexer.h"
 
 /**
@@ -46,7 +47,7 @@ typedef	struct _ast_node ast_node_t;
  * @param lexer Active lexer positioned at the start of input. Must not be NULL.
  * @return Root AST_PROGRAM node, or NULL if the input is empty.
  */
-void *parse_program(lexer_t *lexer);
+ast_node_t *parse_program(lexer_t *lexer);
 
 /**
  * @brief Evaluate an AST and write output to @p stream.
@@ -56,8 +57,7 @@ void *parse_program(lexer_t *lexer);
  * @param node Root node to evaluate.
  * @param stream Output stream for print statements.
  */
-void ast_eval(ast_node_t *node, FILE *stream);
-
+void ast_eval(ast_node_t *node, symbol_table_t *table, FILE *stream);
 
 /**
  * @brief Dump a human-readable representation of the AST to @p stream.
@@ -68,6 +68,8 @@ void ast_eval(ast_node_t *node, FILE *stream);
  * @param stream Output stream. Must not be NULL.
  */
 void ast_dump(ast_node_t *node, FILE *stream);
+
+size_t symbol_count(ast_node_t *node);
 
 #endif
 
