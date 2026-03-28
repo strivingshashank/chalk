@@ -1,5 +1,6 @@
 #include "../include/common.h"
 #include "../include/lexer.h"
+#include "../include/symbol_table.h"
 #include "../include/parser.h"
 
 #include <errno.h>
@@ -10,12 +11,14 @@
 #define UNUSED(x)	((void)x)
 
 /* ----- DECLARATIONS ----- */
+
 char *get_source_from_file(const char *file_name);
 
 // TODO: better error reporting
-// TODO: symbol table implementation
+// TODO: symbol table implementation (almost done, add free fn too)
 // TODO: use asserts in internal functions
 // TODO: write doxy comments for internal fn
+// TODO: refactor code
 
 int main(int argc, char **argv) {
 	if (argc != 2) {
@@ -25,20 +28,24 @@ int main(int argc, char **argv) {
 	char *source_program = get_source_from_file(argv[1]);
 	lexer_t *lexer = lexer_new(source_program);
 	ast_node_t *program_tree = parse_program(lexer);
+	symbol_table_t *table = symbol_table_new(symbol_count(program_tree));
 
 	// UNUSED(program_tree);
 
 	printf("----- Program -----\n");
 	printf("%s\n", source_program);
 
+	// printf("----- Symbol Count -----\n");
+	// printf("%ld symbols\n", symbol_count(program_tree));
+
 	// printf("----- Lexer Dump -----\n");
 	// lexer_dump(lexer, stdout);
-	
-	// printf("----- Output -----\n");
-	// ast_eval(program_tree, stdout);
-	
+		
 	printf("----- AST -----\n");
 	ast_dump(program_tree, stdout);
+	
+	printf("----- Output -----\n");
+	ast_eval(program_tree, table, stdout);
 
 	/* clean-up */
 	free(source_program);
