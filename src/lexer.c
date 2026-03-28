@@ -301,7 +301,7 @@ void lexer_dump(lexer_t *lexer, FILE *stream) {
 		}
 		
 		token = lexer_next(lexer);
-		fprintf(stream, ", ");
+		fprintf(stream, ",\n");
 	}
 	
 	fprintf(stream, "TOK_EOF ]\n");
