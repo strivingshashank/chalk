@@ -19,6 +19,7 @@ char *get_source_from_file(const char *file_name);
 // TODO: use asserts in internal functions
 // TODO: write doxy comments for internal fn
 // TODO: refactor code
+// TODO: add cli args for printing ast, lexer dump and all (instead of hard-coding source)
 
 int main(int argc, char **argv) {
 	if (argc != 2) {
@@ -41,8 +42,8 @@ int main(int argc, char **argv) {
 	// printf("----- Lexer Dump -----\n");
 	// lexer_dump(lexer, stdout);
 		
-	printf("----- AST -----\n");
-	ast_dump(program_tree, stdout);
+	// printf("----- AST -----\n");
+	// ast_dump(program_tree, stdout);
 	
 	printf("----- Output -----\n");
 	ast_eval(program_tree, table, stdout);
