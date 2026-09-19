@@ -1,0 +1,12 @@
+PROGRAM		->	(STATEMENT)* EOF
+STATEMENT	->	(PRINT_STMT | LET_STMT) ";"
+PRINT_STMT	->	"print" ":" EXPRESSION
+LET_STMT	->	"let" IDENT ":" EXPRESSION
+EXPRESSION	->	TERM (("+"|"-") TERM)*
+TERM		->	POWER (("*"|"/") POWER)*
+POWER		->	UNARY ("^" POWER)?
+UNARY		->	"-" UNARY | PRIMARY
+PRIMARY		->	NUMBER | IDENT | "(" EXPRESSION ")"
+IDENT		->	_identifier_
+NUMBER		->	_number_
+
