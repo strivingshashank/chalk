@@ -48,7 +48,7 @@ typedef	struct _ast_node ast_node_t;
  * @return Root AST_PROGRAM node, or NULL if the input is empty.
  */
 ast_node_t *parse_program(lexer_t *lexer);
-
+ 
 /**
  * @brief Evaluate an AST and write output to @p stream.
  *

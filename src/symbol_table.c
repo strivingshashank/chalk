@@ -3,10 +3,10 @@
 
 #include <string.h>
 
-struct _symbol {
-	char name[MAX_IDENT_LEN + 1];
-	double value;
-};
+// struct _symbol {
+// 	char name[MAX_IDENT_LEN + 1];
+// 	double value;
+// };
 
 struct _symbol_table_t {
 	symbol_t *symbols;
