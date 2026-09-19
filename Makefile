@@ -1,31 +1,10 @@
-CC       = gcc
-CFLAGS   = -Wall -Wextra -Werror -I include -g
-LDFLAGS  = -lm
-TARGET   = bin/chalk
-TEST     = bin/test
-SRC      = $(wildcard src/*.c)
-OBJ      = $(patsubst src/%.c, obj/%.o, $(SRC))
-TEST_OBJ = $(filter-out obj/main.o, $(OBJ))
+CC = gcc
+CFLAGS = -Wall -Wextra -Werror -Iinclude -g
 
-$(TARGET): $(OBJ) | bin
-	@$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS)
-
-test: $(TEST)
-	@./$(TEST)
-
-$(TEST): tests/test.c $(TEST_OBJ) | bin
-	@$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS)
-
-obj/%.o: src/%.c | obj
-	@$(CC) $(CFLAGS) -c -o $@ $^
-
-bin:
-	@mkdir -p bin
-
-obj:
-	@mkdir -p obj
+chalk:
+	$(CC) $(CFLAGS) src/*.c -o bin/chalk -lm
 
 clean:
-	@rm -f $(OBJ) $(TARGET) $(TEST)
+	rm -f bin/chalk
 
-.PHONY: clean test run
+.PHONY: clean
